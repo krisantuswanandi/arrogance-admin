@@ -22,8 +22,10 @@ func (m *mockProgram) Start() (tea.Model, error) {
 func TestMainSetup(t *testing.T) {
 	// Create a model with the same values as in main()
 	m := Model{
-		title:   "Welcome to Arrogance Admin",
-		message: "This is a TUI application built with Charm.",
+		title:      "Welcome to Arrogance Admin",
+		message:    "This is a TUI application built with Charm.",
+		loading:    false,
+		spinnerIdx: 0,
 	}
 
 	// Verify the model initialization
@@ -65,8 +67,10 @@ func TestModelCreation(t *testing.T) {
 		t,
 		func() Model {
 			return Model{
-				title:   "Welcome to Arrogance Admin",
-				message: "This is a TUI application built with Charm.",
+				title:      "Welcome to Arrogance Admin",
+				message:    "This is a TUI application built with Charm.",
+				loading:    false,
+				spinnerIdx: 0,
 			}
 		},
 		"Welcome to Arrogance Admin",
@@ -78,8 +82,10 @@ func TestModelCreation(t *testing.T) {
 		t,
 		func() Model {
 			return Model{
-				title:   "Custom Title",
-				message: "Custom Message",
+				title:      "Custom Title",
+				message:    "Custom Message",
+				loading:    false,
+				spinnerIdx: 0,
 			}
 		},
 		"Custom Title",

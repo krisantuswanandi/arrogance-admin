@@ -7,22 +7,33 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+func init() {
+	// Enable test mode for all tests
+	SetTestMode(true)
+}
+
 func TestModelInit(t *testing.T) {
+	defer SetTestMode(false)
+
 	m := Model{
-		title:   "Test Title",
-		message: "Test Message",
+		title:      "Test Title",
+		message:    "Test Message",
+		loading:    false,
+		spinnerIdx: 0,
 	}
 
 	cmd := m.Init()
 	if cmd != nil {
-		t.Error("Expected Init to return nil command, got non-nil")
+		t.Error("Expected Init to return nil command in test mode, got non-nil")
 	}
 }
 
 func TestModelUpdate(t *testing.T) {
 	m := Model{
-		title:   "Test Title",
-		message: "Test Message",
+		title:      "Test Title",
+		message:    "Test Message",
+		loading:    false,
+		spinnerIdx: 0,
 	}
 
 	// Test case 1: Quit on 'q' key press
@@ -80,9 +91,12 @@ func TestModelUpdate(t *testing.T) {
 }
 
 func TestModelView(t *testing.T) {
+	// Create a simple model with loading=false to test basic view
 	m := Model{
-		title:   "Test Title",
-		message: "Test Message",
+		title:      "Test Title",
+		message:    "Test Message",
+		spinnerIdx: 0,
+		loading:    false,
 	}
 
 	view := m.View()
@@ -107,8 +121,9 @@ func TestModelView(t *testing.T) {
 func TestNewModel(t *testing.T) {
 	// Create a model the same way as in main()
 	m := Model{
-		title:   "Welcome to Arrogance Admin",
-		message: "This is a TUI application built with Charm.",
+		title:      "Welcome to Arrogance Admin",
+		message:    "This is a TUI application built with Charm.",
+		spinnerIdx: 0,
 	}
 
 	// Verify the model has the expected values
