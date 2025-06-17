@@ -82,7 +82,7 @@ func TestModelUpdate(t *testing.T) {
 
 	// Test case 3: Other key should not quit
 	keyMsg = tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}}
-	updatedModel, cmd = m.Update(keyMsg)
+	_, cmd = m.Update(keyMsg)
 
 	// Check that command is nil (no quit)
 	if cmd != nil {
