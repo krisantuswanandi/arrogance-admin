@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"sort"
@@ -105,6 +106,14 @@ type usersErrorMsg struct {
 	err error
 }
 
+type routinesErrorMsg struct {
+	err error
+}
+
+type routinesLoadedMsg struct {
+	routines []map[string]interface{}
+}
+
 // TabChangeMsg is sent when the active tab changes
 type tabChangeMsg struct {
 	index int
@@ -135,11 +144,17 @@ type Model struct {
 	tabs        []string
 	currentView string
 
-	// Content components
+	// User components
 	userTable   table.Model
 	userList    []*auth.UserRecord
 	userLoading bool
 	userError   string
+
+	// Routine components
+	routineTable   table.Model
+	routineList    []map[string]interface{}
+	routineLoading bool
+	routineError   string
 }
 
 // Initialize the application
@@ -190,9 +205,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.activeTab = (m.activeTab + 1) % len(m.tabs)
 			m.currentView = m.getViewForActiveTab()
 
-			if m.currentView == UsersView {
+			switch m.currentView {
+			case UsersView:
 				m.userLoading = true
 				return m, fetchUsers(m.authSvc)
+			case RoutinesView:
+				m.routineLoading = true
+				return m, fetchRoutines(m.storeSvc)
 			}
 
 			return m, nil
@@ -200,6 +219,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Switch to previous tab
 			m.activeTab = (m.activeTab - 1 + len(m.tabs)) % len(m.tabs)
 			m.currentView = m.getViewForActiveTab()
+
+			switch m.currentView {
+			case UsersView:
+				m.userLoading = true
+				return m, fetchUsers(m.authSvc)
+			case RoutinesView:
+				m.routineLoading = true
+				return m, fetchRoutines(m.storeSvc)
+			}
+
 			return m, nil
 		}
 
@@ -286,6 +315,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.userError = fmt.Sprintf("Failed to load users: %v", msg.err)
 		return m, nil
 
+	case routinesLoadedMsg:
+		// Update routine table
+		m.routineLoading = false
+		m.routineError = "Temp message" // TODO: Update with actual routines data
+		return m, nil
+
+	case routinesErrorMsg:
+		// Update model with user loading error
+		m.routineLoading = false
+		m.routineError = fmt.Sprintf("Failed to load users: %v", msg.err)
+		return m, nil
+
 	case tabChangeMsg:
 		// Update the active tab
 		if msg.index >= 0 && msg.index < len(m.tabs) {
@@ -325,6 +366,8 @@ func (m Model) getViewForActiveTab() string {
 	switch m.activeTab {
 	case UsersTab:
 		return UsersView
+	case RoutinesTab:
+		return RoutinesView
 	default:
 		return HomeView
 	}
@@ -352,6 +395,8 @@ func (m Model) View() string {
 		content = m.errorView()
 	case UsersView:
 		content = m.usersView()
+	case RoutinesView:
+		content = m.routinesView()
 	default:
 		content = m.homeView()
 	}
@@ -562,17 +607,108 @@ func (m Model) usersView() string {
 	return docStyle.Render(doc.String())
 }
 
+func (m Model) routinesView() string {
+	// Layout
+	doc := strings.Builder{}
+
+	// Render navigation bar
+	nav := m.renderTabs()
+	navBar := navStyle.Width(m.width - 4).Render(nav)
+	doc.WriteString(navBar)
+	doc.WriteString("\n")
+
+	// Content
+	var content string
+	if m.routineLoading {
+		// Show loading spinner
+		spinner := spinnerChars[m.spinnerIdx]
+		content = lipgloss.NewStyle().
+			Width(m.width-8).
+			Height(m.height-10).
+			Padding(2, 2).
+			Render(loadingStyle.Render(spinner + " Loading routines..."))
+	} else if m.routineError != "" {
+		// Show error message
+		content = lipgloss.NewStyle().
+			Width(m.width-8).
+			Height(m.height-10).
+			Padding(2, 2).
+			Render(errorStyle.Render("Error loading routines: " + m.routineError))
+	} else if len(m.routineList) == 0 {
+		// Show empty state
+		content = lipgloss.NewStyle().
+			Width(m.width-8).
+			Height(m.height-10).
+			Padding(2, 2).
+			Render("No routines found in Firestore.")
+	} else {
+		// Adjust table dimensions based on terminal size
+		contentWidth := m.width - 8
+
+		// Calculate column widths
+		totalWidth := 0
+		for _, col := range m.userTable.Columns() {
+			totalWidth += col.Width
+		}
+
+		// Adjust column widths if necessary
+		if totalWidth > contentWidth {
+			ratio := float64(contentWidth) / float64(totalWidth)
+			columns := m.userTable.Columns()
+			for i := range columns {
+				columns[i].Width = int(float64(columns[i].Width) * ratio)
+			}
+			m.userTable.SetColumns(columns)
+		}
+
+		tableView := m.userTable.View()
+		usersCount := fmt.Sprintf("\nTotal users: %d", len(m.userList))
+
+		content = lipgloss.NewStyle().
+			Width(m.width-8).
+			Padding(1, 2).
+			Render(tableView + usersCount)
+	}
+
+	contentBox := lipgloss.NewStyle().
+		Width(m.width - 4).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("240")).
+		Render(content)
+
+	doc.WriteString(contentBox)
+
+	// Footer
+	footerText := "Press 'q' to quit, tab/arrow keys to navigate"
+	if !m.userLoading && m.userError == "" && len(m.userList) > 0 {
+		footerText += ", up/down to select routines"
+	}
+
+	footer := lipgloss.NewStyle().
+		Width(m.width-4).
+		Align(lipgloss.Left).
+		Padding(0, 2).
+		Render(footerText)
+
+	doc.WriteString("\n" + footer)
+
+	// Full view
+	return docStyle.Render(doc.String())
+}
+
 // Application constants
 const (
 	// Tab indices
-	HomeTab  = 0
-	UsersTab = 1
+	HomeTab     = 0
+	UsersTab    = 1
+	RoutinesTab = 2
 
 	// View types for content
-	LoadingView = "loading"
-	ErrorView   = "error"
-	HomeView    = "home"
-	UsersView   = "users"
+	LoadingView  = "loading"
+	ErrorView    = "error"
+	HomeView     = "home"
+	UsersView    = "users"
+	RoutinesView = "routines"
 )
 
 // Helper functions
@@ -739,6 +875,32 @@ func fetchUsers(authSvc *firebase.AuthService) tea.Cmd {
 	}
 }
 
+func fetchRoutines(storeSvg *firebase.FirestoreService) tea.Cmd {
+	return func() tea.Msg {
+		if storeSvg == nil {
+			return routinesErrorMsg{err: errors.New("firestore service not initialized")}
+		}
+
+		// Fetch users from Firebase Auth
+		ctx := context.Background()
+
+		// Try to fetch users from Firebase Auth
+		routines, err := storeSvg.List(ctx, "routines")
+
+		if err != nil {
+			// If we fail to get users, return fallback data for development
+			return routinesErrorMsg{err: fmt.Errorf("failed to fetch routines: %w", err)}
+		}
+
+		// Process user records from the iterator
+		a := routines[0]
+		log.Println(a)
+
+		// If no users were found, add sample users for development
+		return routinesLoadedMsg{routines: routines}
+	}
+}
+
 func realMain() {
 	f, err := tea.LogToFile("debug.log", "debug")
 	if err != nil {
@@ -763,7 +925,7 @@ func realMain() {
 		width:       width,
 		height:      height,
 		activeTab:   HomeTab,
-		tabs:        []string{"Home", "Users"},
+		tabs:        []string{"Home", "Users", "Routines"},
 		currentView: LoadingView,
 		userLoading: false,
 	}
