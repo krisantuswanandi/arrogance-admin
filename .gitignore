@@ -28,3 +28,5 @@ firebase-service-account*.json
 
 # macOS files
 .DS_Store
+
+debug.log

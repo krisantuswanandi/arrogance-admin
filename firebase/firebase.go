@@ -2,6 +2,7 @@ package firebase
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -28,16 +29,19 @@ var (
 func InitFirebase() (*AppClient, error) {
 	ctx := context.Background()
 
-	// Check for environment variable with service account path
+	// Get service account path from environment
 	serviceAccountPath := os.Getenv("FIREBASE_SERVICE_ACCOUNT")
 	if serviceAccountPath == "" {
-		// Default to looking for the service account in the current directory or config directory
+		// Look for service account in common locations
 		homeDir, err := os.UserHomeDir()
 		if err == nil {
 			// Try in the config directory first
 			configPath := filepath.Join(homeDir, ".config", "arrogance", "service-account.json")
 			if _, err := os.Stat(configPath); err == nil {
 				serviceAccountPath = configPath
+				log.Printf("Found service account at: %s", configPath)
+			} else {
+				log.Printf("No service account found at: %s (%v)", configPath, err)
 			}
 		}
 
@@ -46,6 +50,9 @@ func InitFirebase() (*AppClient, error) {
 			localPath := "service-account.json"
 			if _, err := os.Stat(localPath); err == nil {
 				serviceAccountPath = localPath
+				log.Printf("Found service account at: %s", localPath)
+			} else {
+				log.Printf("No service account found at: %s (%v)", localPath, err)
 			}
 		}
 	}
@@ -58,28 +65,26 @@ func InitFirebase() (*AppClient, error) {
 		opt := option.WithCredentialsFile(serviceAccountPath)
 		app, err = firebase.NewApp(ctx, nil, opt)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to initialize Firebase with service account: %w", err)
 		}
-		log.Printf("Firebase initialized with service account: %s", serviceAccountPath)
 	} else {
 		// Initialize with default credentials (useful for development or when running on GCP)
 		app, err = firebase.NewApp(ctx, nil)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to initialize Firebase with default credentials: %w", err)
 		}
-		log.Println("Firebase initialized with default credentials")
 	}
 
 	// Initialize Auth client
 	authClient, err := app.Auth(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to initialize Auth client: %w", err)
 	}
 
 	// Initialize Firestore client
 	firestoreClient, err := app.Firestore(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to initialize Firestore client: %w", err)
 	}
 
 	client := &AppClient{

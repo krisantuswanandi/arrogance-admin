@@ -3,6 +3,8 @@ package firebase
 import (
 	"context"
 	"errors"
+	"log"
+	"os"
 
 	"firebase.google.com/go/v4/auth"
 )
@@ -38,10 +40,21 @@ func (s *AuthService) GetUser(ctx context.Context, uid string) (*auth.UserRecord
 // ListUsers lists users with pagination
 func (s *AuthService) ListUsers(ctx context.Context, maxResults uint32, pageToken string) (*auth.UserIterator, error) {
 	if s.client == nil {
+		log.Println("Auth client is nil")
 		return nil, errors.New("auth client not initialized")
 	}
+
+	log.Println("Auth client is available, creating user iterator")
+
+	// Print the GOOGLE_APPLICATION_CREDENTIALS environment variable
+	if creds := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"); creds != "" {
+		log.Printf("Using GOOGLE_APPLICATION_CREDENTIALS: %s", creds)
+	}
+
 	// Using the Users method to get an iterator
 	iter := s.client.Users(ctx, pageToken)
+	log.Println("User iterator created successfully")
+
 	return iter, nil
 }
 
