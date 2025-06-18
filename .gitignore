@@ -32,3 +32,5 @@ firebase-service-account*.json
 debug.log
 node_modules
 dump.rdb
+.env
+service-account.json
