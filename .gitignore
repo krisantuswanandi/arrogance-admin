@@ -30,3 +30,5 @@ firebase-service-account*.json
 .DS_Store
 
 debug.log
+node_modules
+dump.rdb
