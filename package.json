@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "firebase-admin": "^13.4.0",
+    "fullscreen-ink": "^0.0.2",
     "ink": "^6.0.0",
     "react": "^19.1.0"
   },

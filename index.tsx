@@ -1,15 +1,11 @@
-import { render, Box, Text, useApp, useInput, useStdout } from "ink";
+import { Box, Text, useApp, useInput } from "ink";
 import { useEffect, useState } from "react";
 import { initializeApp, type App } from "firebase-admin/app";
 import { getAuth, UserRecord } from "firebase-admin/auth";
-
-const ENTER_ALTERNATE_SCREEN = "\x1b[?1049h";
-const EXIT_ALTERNATE_SCREEN = "\x1b[?1049l";
+import { withFullScreen } from "fullscreen-ink";
 
 const App = () => {
   const { exit } = useApp();
-  const { stdout } = useStdout();
-
   const [users, setUsers] = useState<UserRecord[]>([]);
 
   // Initialize Firebase Admin SDK
@@ -23,20 +19,15 @@ const App = () => {
       });
   }, []);
 
-  // Listen for keypresses
-  useInput((input, key) => {
-    if (input === "q" || (key.ctrl && input === "c")) {
+  // Exit on "q" (ctrl+C handled by fullscreen-ink)
+  useInput((input) => {
+    if (input === "q") {
       exit();
     }
   });
 
   return (
-    <Box
-      justifyContent="center"
-      alignItems="center"
-      width={stdout.columns}
-      height={stdout.rows}
-    >
+    <Box justifyContent="center" alignItems="center" width="100%" height="100%">
       <Box flexDirection="column">
         <Text>
           Press{" "}
@@ -59,10 +50,4 @@ const App = () => {
   );
 };
 
-// Enter alternate screen
-process.stdout.write(ENTER_ALTERNATE_SCREEN);
-process.on("exit", () => {
-  process.stdout.write(EXIT_ALTERNATE_SCREEN);
-});
-
-render(<App />);
+withFullScreen(<App />).start();
