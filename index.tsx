@@ -7,6 +7,7 @@ import { withFullScreen } from "fullscreen-ink";
 const App = () => {
   const { exit } = useApp();
   const [users, setUsers] = useState<UserRecord[]>([]);
+  const [cursor, setCursor] = useState<number>(0);
 
   // Initialize Firebase Admin SDK
   useEffect(() => {
@@ -20,9 +21,13 @@ const App = () => {
   }, []);
 
   // Exit on "q" (ctrl+C handled by fullscreen-ink)
-  useInput((input) => {
+  useInput((input, key) => {
     if (input === "q") {
       exit();
+    } else if (input === "j" || key.downArrow) {
+      setCursor((prev) => Math.min(prev + 1, users.length - 1));
+    } else if (input === "k" || key.upArrow) {
+      setCursor((prev) => Math.max(prev - 1, 0));
     }
   });
 
@@ -41,8 +46,14 @@ const App = () => {
           to exit.
         </Text>
         <Box marginTop={1} flexDirection="column">
-          {users.map((user) => (
-            <Text key={user.uid}>{user.uid}</Text>
+          {users.map((user, index) => (
+            <Text
+              key={user.uid}
+              backgroundColor={index === cursor ? "magenta" : ""}
+              color={index === cursor ? "#FFF" : ""}
+            >
+              {user.uid}
+            </Text>
           ))}
         </Box>
       </Box>
