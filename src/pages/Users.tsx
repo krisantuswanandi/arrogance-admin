@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { fetchUsers } from "../utils/firebase";
 import type { UserRecord } from "firebase-admin/auth";
 
-export const Users = () => {
+export const Users = ({ onSelect }: { onSelect: (uid: string) => void }) => {
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [cursor, setCursor] = useState<number>(0);
 
@@ -19,6 +19,8 @@ export const Users = () => {
       setCursor((prev) => Math.min(prev + 1, users.length - 1));
     } else if (input === "k" || key.upArrow) {
       setCursor((prev) => Math.max(prev - 1, 0));
+    } else if (key.return) {
+      if (users[cursor]) onSelect(users[cursor].uid);
     }
   });
 
