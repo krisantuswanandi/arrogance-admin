@@ -24,8 +24,8 @@ export function getFirestoreInstance() {
   return getFirestore(app);
 }
 
-export function fetchUsers(limit: number) {
-  return getAuthInstance().listUsers(limit);
+export function fetchUsers(limit: number, pageToken?: string) {
+  return getAuthInstance().listUsers(limit, pageToken);
 }
 
 export async function fetchProfilesByUser(uid: string) {
