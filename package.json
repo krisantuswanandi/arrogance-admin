@@ -1,10 +1,10 @@
 {
   "name": "arrogance-admin",
-  "module": "index.tsx",
+  "module": "index.ts",
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun run index.tsx"
+    "dev": "bun run index.ts"
   },
   "dependencies": {
     "date-fns": "^4.1.0",

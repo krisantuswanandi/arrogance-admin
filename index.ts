@@ -1,7 +1,8 @@
 import { withFullScreen } from "fullscreen-ink";
+import { createElement } from "react";
 import { App } from "./src/App";
 import { initFirebase } from "./src/utils/firebase";
 
 initFirebase();
 
-withFullScreen(<App />).start();
+withFullScreen(createElement(App)).start();

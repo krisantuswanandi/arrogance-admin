@@ -3,10 +3,12 @@ import { Users } from "./pages/Users";
 import { Footer } from "./components/Footer";
 import { useState } from "react";
 import { User } from "./pages/User";
+import type { UserRecord } from "firebase-admin/auth";
 
 export const App = () => {
   const { exit } = useApp();
   const [page, setPage] = useState("users");
+  const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
 
   // Exit on "q" (ctrl+C handled by fullscreen-ink)
   useInput((input) => {
@@ -15,8 +17,34 @@ export const App = () => {
     }
   });
 
-  function selectPage(newPage: string) {
-    setPage(newPage);
+  function selectUser(user: UserRecord) {
+    setPage("user");
+    setSelectedUser(user);
+  }
+
+  function goHome() {
+    setPage("users");
+    setSelectedUser(null);
+  }
+
+  let content;
+
+  switch (page) {
+    case "users":
+      content = (
+        <>
+          <Box paddingLeft={2}>
+            <Text bold>Users</Text>
+          </Box>
+          <Users onSelectUser={selectUser} />
+        </>
+      );
+      break;
+    case "user":
+      content = <User user={selectedUser!} goBack={goHome} />;
+      break;
+    default:
+      content = <Text color="red">404 Not Found</Text>;
   }
 
   return (
@@ -27,16 +55,7 @@ export const App = () => {
             Arrogance Admin
           </Text>
         </Box>
-        {page === "users" ? (
-          <>
-            <Box paddingLeft={2}>
-              <Text bold>Users</Text>
-            </Box>
-            <Users onSelect={selectPage} />
-          </>
-        ) : (
-          <User goBack={() => setPage("users")} />
-        )}
+        {content}
         <Spacer />
         <Footer />
       </Box>
