@@ -13,7 +13,7 @@ export const Users = ({
   const [cursor, setCursor] = useState<number>(0);
 
   useEffect(() => {
-    fetchUsers(5).then((result) => {
+    fetchUsers(10).then((result) => {
       setUsers(result.users);
     });
   }, []);
