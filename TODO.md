@@ -1,3 +1,6 @@
-- confirmation before delete
 - refactor routing
 - legend for the shortcuts
+- user data pagination (exercises, histories, etc.)
+- filter histories and records by profile
+- q from user detail to go back to user list
+- esc from modal only close the modal

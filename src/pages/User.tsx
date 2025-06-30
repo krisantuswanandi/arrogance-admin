@@ -6,6 +6,7 @@ import {
   fetchProfilesByUser,
   deleteUserAndAllData,
 } from "../utils/firebase";
+import { Modal } from "../components/Modal";
 import type { UserRecord } from "firebase-admin/auth";
 import type { Exercise, History, Profile } from "../utils/types";
 
@@ -50,6 +51,7 @@ export const User = ({
   const [histories, setHistories] = useState<History[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -73,7 +75,7 @@ export const User = ({
       goBack();
     }
     if (key.ctrl && input === "d") {
-      handleDeleteUser();
+      setShowDeleteModal(true);
     }
   });
 
@@ -81,6 +83,7 @@ export const User = ({
     if (deleting) return;
 
     setDeleting(true);
+    setShowDeleteModal(false);
     try {
       await deleteUserAndAllData(user.uid);
       goBack(); // Go back to users list after successful deletion
@@ -88,6 +91,10 @@ export const User = ({
       console.error("Failed to delete user:", error);
       setDeleting(false);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
   };
 
   let content;
@@ -149,6 +156,19 @@ export const User = ({
           user
         </Text>
       </Box>
+
+      <Modal
+        isOpen={showDeleteModal}
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={handleDeleteUser}
+        onCancel={handleDeleteCancel}
+        destructive={true}
+      >
+        <Text>
+          Are you sure to delete user "<Text bold>{user.uid}</Text>" ?
+        </Text>
+      </Modal>
     </Box>
   );
 };
