@@ -24,7 +24,7 @@ export const Users = ({
     async (pageToken?: string) => {
       setLoading(true);
       try {
-        const result = await fetchUsers(3, pageToken);
+        const result = await fetchUsers(10, pageToken);
         setUsers(result.users);
         setHasNextPage(!!result.pageToken);
 
@@ -36,7 +36,7 @@ export const Users = ({
         setLoading(false);
       }
     },
-    [pageTokens]
+    [pageTokens],
   );
 
   useInput((input, key) => {

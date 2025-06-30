@@ -1,0 +1,3 @@
+- confirmation before delete
+- refactor routing
+- legend for the shortcuts

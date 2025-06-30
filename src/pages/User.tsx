@@ -4,6 +4,7 @@ import {
   fetchExercisesByUser,
   fetchHistoriesByUser,
   fetchProfilesByUser,
+  deleteUserAndAllData,
 } from "../utils/firebase";
 import type { UserRecord } from "firebase-admin/auth";
 import type { Exercise, History, Profile } from "../utils/types";
@@ -48,6 +49,7 @@ export const User = ({
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [histories, setHistories] = useState<History[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -66,15 +68,37 @@ export const User = ({
       });
   }, [user.uid]);
 
-  useInput((_, key) => {
+  useInput((input, key) => {
     if (key.escape || key.delete) {
       goBack();
     }
+    if (key.ctrl && input === "d") {
+      handleDeleteUser();
+    }
   });
+
+  const handleDeleteUser = async () => {
+    if (deleting) return;
+
+    setDeleting(true);
+    try {
+      await deleteUserAndAllData(user.uid);
+      goBack(); // Go back to users list after successful deletion
+    } catch (error) {
+      console.error("Failed to delete user:", error);
+      setDeleting(false);
+    }
+  };
 
   let content;
 
-  if (loading) {
+  if (deleting) {
+    content = (
+      <Box marginTop={1}>
+        <Text color="red">Deleting user and all related data...</Text>
+      </Box>
+    );
+  } else if (loading) {
     content = (
       <Box marginTop={1}>
         <Text>Loading...</Text>
@@ -121,7 +145,8 @@ export const User = ({
       {content}
       <Box marginTop={1}>
         <Text>
-          <Text bold>Esc</Text> to go back
+          <Text bold>Esc</Text> to go back | <Text bold>Ctrl+D</Text> to delete
+          user
         </Text>
       </Box>
     </Box>

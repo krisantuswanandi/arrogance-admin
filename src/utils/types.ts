@@ -26,3 +26,11 @@ export type Workout = {
   name: string;
   date: Date;
 };
+
+export type Routine = {
+  id: string;
+  name: string;
+  uid: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
